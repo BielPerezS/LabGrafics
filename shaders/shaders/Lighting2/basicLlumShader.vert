@@ -1,0 +1,62 @@
+#version 330 core
+
+layout (location = 0) in vec3 vertex;
+layout (location = 1) in vec3 normal;
+layout (location = 2) in vec3 color;
+layout (location = 3) in vec2 texCoord;
+
+out vec4 frontColor;
+out vec2 vtexCoord;
+
+uniform mat4 modelViewProjectionMatrix;
+uniform mat4 viewMatrix;
+uniform mat3 normalMatrix;
+
+out vec4 FragColor;
+
+uniform vec4 lightAmbient;
+uniform vec4 lightDiffuse;
+uniform vec4 lightSpecular;
+uniform vec4 lightPosition; // (sempre estarà en eye space)
+uniform vec4 matAmbient;
+uniform vec4 matDiffuse;
+uniform vec4 matSpecular;
+uniform float matShininess;
+
+vec3 Ambient() {
+  return lightAmbient.xyz * matAmbient.xyz;
+}
+
+vec3 Difus (vec3 NormSCO, vec3 L, vec3 colFocus)
+{
+  vec3 colRes = vec3(0);
+  if (dot (L, NormSCO) > 0)
+    colRes = colFocus * matDiffuse.xyz * dot (L, NormSCO);
+  return (colRes);
+}
+
+vec3 Especular (vec3 NormSCO, vec3 L, vec3 vertSCO, vec3 colFocus)
+{
+  vec3 colRes = vec3 (0);
+  if ((dot(NormSCO,L) < 0) || (matShininess == 0))
+    return colRes;  // no hi ha component especular
+  vec3 R = reflect(-L, NormSCO); // equival a: 2.0*dot(NormSCO,L)*NormSCO - L;
+  vec3 V = normalize(-vertSCO); // perquè la càmera està a (0,0,0) en SCO
+
+  if (dot(R, V) < 0)
+    return colRes;  // no hi ha component especular
+  return colFocus * matSpecular.xyz * pow(max(0.0, dot(R, V)), matShininess);
+}
+
+void main()
+{
+    vec3 N = normalize(normalMatrix * normal);
+    vec4 vertSCO = viewMatrix * vec4(vertex, 1.0);
+    vec3 L = normalize(lightPosition.xyz - vertSCO.xyz);
+
+    gl_Position = modelViewProjectionMatrix * (vec4(vertex, 1.0));
+
+    vec3 fcolor = Ambient() + Difus(N, L, lightDiffuse.xyz) + Especular(N, L, vertSCO.xyz, lightSpecular.xyz);
+
+    frontColor = vec4(fcolor.xyz, 1.0);
+}
