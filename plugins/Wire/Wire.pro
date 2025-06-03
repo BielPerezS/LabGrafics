@@ -1,2 +1,2 @@
-TARGET     = $$qtLibraryTarget(Wire12)
+TARGET     = $$qtLibraryTarget(Wire1)
 include(../common.pro)

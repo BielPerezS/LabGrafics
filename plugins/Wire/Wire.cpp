@@ -28,9 +28,10 @@ void Wire::onPluginLoad()
       "out vec4 frontColor;"
       "uniform mat4 modelViewProjectionMatrix;"
       "uniform mat3 normalMatrix;"
+      "uniform float color;"
       "void main() {"
       "  vec3 N = normalize(normalMatrix * normal);"
-      "  frontColor = vec4(N.z);"
+      "  frontColor = vec4(vec3(N.z*color),1);"
       "  gl_Position = modelViewProjectionMatrix * vec4(vertex, 1.0);"
       "}";
     vs = new QOpenGLShader(QOpenGLShader::Vertex, this);
@@ -45,6 +46,7 @@ void Wire::onPluginLoad()
     "  fragColor = frontColor;"
     "}";
     fs = new QOpenGLShader(QOpenGLShader::Fragment, this);
+    
     fs->compileSourceCode(fs_src);
     cout << "FS log:" << fs->log().toStdString() << endl;
 
@@ -55,15 +57,28 @@ void Wire::onPluginLoad()
     cout << "Link log:" << program->log().toStdString() << endl;
 }
 
-void Wire::preFrame() 
-{
+// el link es pot fer en el preframe
+bool Wire::paintGL(){
+    GLWidget & g = *glwidget();
     // bind shader and define uniforms
     program->bind();
+    glPolygonMode(GL_FRONT_AND_BACK,GL_FILL);
     QMatrix4x4 MVP = camera()->projectionMatrix() * camera()->viewMatrix();
     QMatrix3x3 NM = camera()->viewMatrix().normalMatrix();
-
     program->setUniformValue("modelViewProjectionMatrix", MVP); 
     program->setUniformValue("normalMatrix", NM);
+    program->setUniformValue("color",1.0f);
+
+    g.glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
+    drawPlugin()->drawScene();
+
+    glEnable(GL_POLYGON_OFFSET_LINE);
+    glPolygonOffset(-1.0f,-1.0f);
+    glPolygonMode(GL_FRONT_AND_BACK,GL_LINE);
+    program->setUniformValue("color",0.0f);
+    drawPlugin()->drawScene();
+    glDisable(GL_POLYGON_OFFSET_LINE);
+    return true;
 }
 
 void Wire::postFrame() 
@@ -71,6 +86,5 @@ void Wire::postFrame()
     // unbind shader
     program->release();
 }
-
 
 

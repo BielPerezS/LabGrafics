@@ -32,8 +32,9 @@ class Wire : public QObject, public Plugin
 
  public:
     void onPluginLoad();
-    void preFrame();
     void postFrame();
+
+    bool paintGL();
     
  private:
     QOpenGLShaderProgram* program;
@@ -41,4 +42,3 @@ class Wire : public QObject, public Plugin
  };
  
  #endif
-

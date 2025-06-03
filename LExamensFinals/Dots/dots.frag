@@ -3,16 +3,20 @@
 in vec4 gfrontColor;
 out vec4 fragColor;
 
-in vec3 P[3];
+in vec3 P;
 in vec3 C;
 uniform float size = 0.02;
+uniform bool opaque = true;
 
 void main()
 {
-    bool inside = true;
-    for (int i = 0; i < 3; i++){
-        if (distance(P[i], C) < size) {
-            fragColor = gfrontColor;
-        }
+    if (distance(P,C) < size*2){
+        fragColor = gfrontColor;
+    }
+    else{
+        if (opaque)
+            discard;
+        else
+            fragColor = vec4(1);
     }
 }
